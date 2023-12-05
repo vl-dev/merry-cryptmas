@@ -49,7 +49,7 @@ const NumericInput: React.FC<{
 
 const Form: React.FC<props> = (props: props) => {
   const [totalToSpend, setTotalToSpend] = useState("1");
-  const [ticketsToGenerate, setTicketsToGenerate] = useState("0");
+  const [ticketsToGenerate, setTicketsToGenerate] = useState("3");
   const [distribution, setDistribution] = useState('even');
   const [working, setWorking] = useState(false);
 

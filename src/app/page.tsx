@@ -107,6 +107,22 @@ export default function Home() {
     const signedTxs = await signAllTransactions([tx]);
     const txid = await connection.sendRawTransaction(signedTxs[0].serialize());
     console.log(`Transaction sent: ${txid}`);
+
+    await fetch(
+      "/api/log",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pubkey: publicKey.toBase58(),
+          txid,
+          total: totalToSpend,
+          gifts: ticketsToGenerate,
+          strategy: distribution,
+        }),
+      }
+    )
+
     const links: string[] = tiplinks.map((tiplink: any) => tiplink.link)
     setLinks(links);
   };
