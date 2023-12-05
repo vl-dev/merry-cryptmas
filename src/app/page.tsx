@@ -138,7 +138,7 @@ export default function Home() {
             <div
               className="md:text-2xl text-lg font-bold flex flex-col text-center text-red-700">
               <span>MAKE SURE THAT YOU SAVE THE LINKS BEFORE LEAVING THIS PAGE!!!</span>
-              <span>Otherwise you are going to lose your presents forever!</span>
+              <span>Otherwise you are going to lose the presents forever!</span>
             </div>
             <div
               className="flex flex-col items-center justify-between gap-3"

@@ -9,9 +9,47 @@ type props = {
   disabled: boolean;
 }
 
+const NumericInput: React.FC<{
+  value: string,
+  setValue: (value: string) => void,
+  min: number,
+  max: number,
+  step: number
+}> = ({
+        value,
+        setValue,
+        min,
+        max,
+        step
+      }) => {
+  return (<div
+    className="flex"
+  >
+    <input
+      className="bg-red-500 px-2 bg-opacity-30"
+      type="button" value='-'
+      disabled={Number(value) <= min}
+      onClick={() => setValue((Math.round((Number(value) - step) * (1.0/step)) / (1.0/step)).toString())}
+    />
+    <input
+      type="text"
+      className="w-20 text-center bg-stone-700 text-white"
+      value={value}
+      onChange={e => setValue(e.target.value)}
+      onBlur={e => setValue(Number(e.target.value) ? Math.min(Math.max(Number(e.target.value), min), max).toString() : min.toString())}
+    />
+    <input
+      className="bg-green-700 bg-opacity-50 px-2"
+      type="button" value='+'
+      disabled={Number(value) >= max}
+      onClick={() => setValue((Math.round((Number(value) + step) * (1.0/step)) / (1.0/step)).toString())}
+    />
+  </div>)
+}
+
 const Form: React.FC<props> = (props: props) => {
-  const [totalToSpend, setTotalToSpend] = useState(1);
-  const [ticketsToGenerate, setTicketsToGenerate] = useState(3);
+  const [totalToSpend, setTotalToSpend] = useState("1");
+  const [ticketsToGenerate, setTicketsToGenerate] = useState("0");
   const [distribution, setDistribution] = useState('even');
   const [working, setWorking] = useState(false);
 
@@ -20,8 +58,8 @@ const Form: React.FC<props> = (props: props) => {
     setWorking(true);
     try {
       await props.handleSubmit(
-        ticketsToGenerate,
-        totalToSpend,
+        Number(ticketsToGenerate),
+        Number(totalToSpend),
         distribution
       );
     } finally {
@@ -35,29 +73,25 @@ const Form: React.FC<props> = (props: props) => {
         <label
           className="flex justify-between gap-3 align-middle"
         >
-          Spending limit:
-          <input
-            type="number"
-            step="0.1"
-            min="0"
-            className="w-20 text-center bg-stone-700 text-white"
+          Total amount (SOL):
+          <NumericInput
             value={totalToSpend}
-            onChange={e => setTotalToSpend(Number(e.target.value))}
+            setValue={setTotalToSpend}
+            min={0.1}
+            max={10000}
+            step={0.1}
           />
-          SOL
         </label>
         <label
           className="flex justify-between gap-3"
         >
-          Present count:
-          <input
-            type="number"
-            step="0.1"
-            min="0"
-            max="10"
-            className="w-20 text-center bg-stone-700 text-white"
+          Number of gifts:
+          <NumericInput
             value={ticketsToGenerate}
-            onChange={e => setTicketsToGenerate(Number(e.target.value))}
+            setValue={setTicketsToGenerate}
+            min={1}
+            max={10}
+            step={1}
           />
         </label>
         <label
@@ -75,11 +109,11 @@ const Form: React.FC<props> = (props: props) => {
         </label>
         {props.disabled ? (
           <div className="text-center text-red-500 mt-5">
-           Connect your wallet to continue
+            Connect your wallet to continue
           </div>
         ) : (
           <input
-            className="mt-5 bg-green-700 hover:bg-green-500 text-white font-bold py-3 px-6 rounded"
+            className="mt-5 bg-green-700 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-md"
             type="button" value={
             working ? 'Elves are working...' : 'Submit'
           } disabled={working || props.disabled}
