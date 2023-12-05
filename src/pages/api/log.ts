@@ -15,12 +15,11 @@ export default async function handler(
         await sql`INSERT INTO logs (pubkey, tx_id, total, gifts, strategy, env)
                   VALUES (${pubkey}, ${txid}, ${total}, ${gifts}, ${strategy}, ${vercel_env})`
         res.status(200).send("OK")
-        break;
       } catch (error) {
         console.error("Error: ", error)
         res.status(500).send("Error")
       }
-
+      break;
     default:
       res.status(405).json({ message: `Method ${requestMethod} not allowed` })
   }
