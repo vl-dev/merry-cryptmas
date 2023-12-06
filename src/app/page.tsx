@@ -142,7 +142,7 @@ export default function Home() {
               className="md:text-2xl text-lg font-bold text-center"
             >Gifts are boring, gib SOL instead!
               <div className="mt-2 text-sm md:text-base font-medium text-white">
-                Create unique links where your friends can claim SOL!
+                Create unique links for your friends to get SOL!
               </div>
             </h2>
             <WalletMultiButtonDynamic
