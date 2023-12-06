@@ -73,7 +73,7 @@ const Form: React.FC<props> = (props: props) => {
         <label
           className="flex justify-between gap-3 align-middle"
         >
-          Total amount (SOL):
+          Total to spend (SOL):
           <NumericInput
             value={totalToSpend}
             setValue={setTotalToSpend}
@@ -99,12 +99,12 @@ const Form: React.FC<props> = (props: props) => {
         >
           Distribute:
           <select
-            className="w-40 text-center bg-stone-700 text-white"
+            className="w-60 text-center bg-stone-700 text-white"
             value={distribution}
             onChange={e => setDistribution(e.target.value)}
           >
-            <option value="even">Evenly</option>
-            <option value="random">Randomly</option>
+            <option value="even">Same amount to everyone</option>
+            <option value="random">Random amounts</option>
           </select>
         </label>
         {props.disabled ? (
@@ -113,7 +113,7 @@ const Form: React.FC<props> = (props: props) => {
           </div>
         ) : (
           <input
-            className="mt-5 bg-green-700 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-md"
+            className="mt-5 bg-green-700 hover:bg-green-500 text-white font-bold md:py-3 py-2 px-6 rounded-md"
             type="button" value={
             working ? 'Elves are working...' : 'Submit'
           } disabled={working || props.disabled}

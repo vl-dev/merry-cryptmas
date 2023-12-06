@@ -105,6 +105,7 @@ export default function Home() {
     tx.feePayer = publicKey;
 
     const signedTxs = await signAllTransactions([tx]);
+    // todo here we can do some nicer handling if the tx sending fails
     const txid = await connection.sendRawTransaction(signedTxs[0].serialize());
     console.log(`Transaction sent: ${txid}`);
 
@@ -139,7 +140,11 @@ export default function Home() {
           <>
             <h2
               className="md:text-2xl text-lg font-bold text-center"
-            >Gifts are boring, gib SOL instead!</h2>
+            >Gifts are boring, gib SOL instead!
+              <div className="mt-2 text-sm md:text-base font-medium text-white">
+                Create unique links where your friends can claim SOL!
+              </div>
+            </h2>
             <WalletMultiButtonDynamic
               style={{ backgroundColor: 'rgb(21, 128, 61)' }}
             />
@@ -157,7 +162,7 @@ export default function Home() {
               <span>Otherwise you are going to lose the presents forever!</span>
             </div>
             <div
-              className="flex flex-col items-center justify-between gap-3"
+              className="flex flex-col items-center justify-between gap-3 p-5"
             >{
               links.map((link: string) => (
                 <a
@@ -169,6 +174,9 @@ export default function Home() {
                 >{link}</a>
               ))
             }</div>
+            <div className="text-center text-white">
+              Every link contains a unique present, so make sure to save them all!
+            </div>
           </div>
         )
         }

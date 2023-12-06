@@ -15,7 +15,7 @@ export default function Id() {
           className="md:text-6xl text-3xl font-bold text-center"
         >🎄 MERRY CRYPTMAS! 🎅</h1>
         <div className="text-2xl text-white">
-          Open your present!
+          Open your present by clicking on it!
         </div>
         <a href={tiplink} target="_blank" className="text-8xl">
           🎁
