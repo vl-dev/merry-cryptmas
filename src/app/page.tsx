@@ -108,6 +108,9 @@ export default function Home() {
     const txid = await connection.sendRawTransaction(signedTxs[0].serialize());
     console.log(`Transaction sent: ${txid}`);
 
+    const links: string[] = tiplinks.map((tiplink: any) => tiplink.link)
+    setLinks(links);
+
     await fetch(
       "/api/log",
       {
@@ -122,9 +125,6 @@ export default function Home() {
         }),
       }
     )
-
-    const links: string[] = tiplinks.map((tiplink: any) => tiplink.link)
-    setLinks(links);
   };
 
   return (
