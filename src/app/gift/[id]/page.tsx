@@ -17,11 +17,11 @@ export default function Id() {
         <div className="text-2xl text-white">
           Open your present!
         </div>
-        <a href={tiplink} className="text-8xl">
+        <a href={tiplink} target="_blank" className="text-8xl">
           🎁
         </a>
         <div className="mt-5 text-center text-gray-400">
-          Want to send crypto gifts as well? <a href="/" className="underline">Click here</a>
+          Want to send crypto gifts as well? <a href="/" target="_blank" className="underline">Click here</a>
         </div>
       </div>
     </main>
