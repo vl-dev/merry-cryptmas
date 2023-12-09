@@ -27,7 +27,7 @@ export class TiplinkHandler {
     currency: Currency,
   ) {
     this.payer = payer;
-    this.lamports = lamports;
+    this.lamports = Math.floor(lamports);
     this.currency = currency;
     this.link = link;
     this.owner = owner;
@@ -62,7 +62,7 @@ export class TiplinkHandler {
       const ix = SystemProgram.transfer({
         fromPubkey: this.payer,
         toPubkey: this.owner,
-        lamports: Math.floor(this.lamports),
+        lamports: this.lamports,
       })
       const messageV0 = new TransactionMessage({
         payerKey: this.payer,
@@ -88,6 +88,7 @@ export class TiplinkHandler {
   }
   
   private async getSwapIxs(): Promise<VersionedTransaction> {
+    try {
     const jupiterQuoteApi = createJupiterApiClient()
     const quote = await jupiterQuoteApi.quoteGet({
       inputMint: 'So11111111111111111111111111111111111111112',
@@ -116,5 +117,11 @@ export class TiplinkHandler {
     const vtx = VersionedTransaction.deserialize(swapTransactionBuf)
     console.log(vtx)
     return vtx;
+  }
+  catch (e) {
+    console.log(e)
+    debugger;
+    throw e;
+  }
   }
 }

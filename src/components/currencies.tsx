@@ -7,13 +7,9 @@ import Image from "next/image";
 type props = {
   selectedCurrencies: Currency[];
   setSelectedCurrencies: (selectedCurrencies: Currency[]) => void;
-  setNextDisabled: (nextStepDisabled: boolean) => void;
 }
 
 const Currencies: React.FC<props> = (props) => {
-  useEffect(() => {
-    props.setNextDisabled(props.selectedCurrencies.length === 0);
-  }, [props.selectedCurrencies]);
   return (
     <>
       <h2

@@ -10,6 +10,7 @@ import Summary from "@/components/summary";
 import Output from "@/components/output";
 import { prepareVouchers } from "@/lib/prepare_vouchers";
 import { Result } from "@/types/result";
+import currencies from "@/components/currencies";
 
 // step enum
 const WELCOME = 0;
@@ -57,7 +58,6 @@ export default function Home() {
   const { connection } = useConnection();
   const { signAllTransactions, publicKey } = useWallet();
   const [step, setStep] = useState(steps[WELCOME]);
-  const [nextDisabled, setNextDisabled] = useState(false);
   const [selectedCurrencies, setSelectedCurrencies] = useState(supportedCurrencies);
   const [totalToSpend, setTotalToSpend] = useState("0.5");
   const [ticketsToGenerate, setTicketsToGenerate] = useState("3");
@@ -94,6 +94,10 @@ export default function Home() {
     }
   };
 
+useEffect(() => {
+  console.log(selectedCurrencies)
+}, [selectedCurrencies])
+
   return (
     <>
       <div className="h-3/4">
@@ -102,7 +106,6 @@ export default function Home() {
         )}
         {step.id === CURRENCIES && (
           <Currencies
-            setNextDisabled={setNextDisabled}
             selectedCurrencies={selectedCurrencies}
             setSelectedCurrencies={setSelectedCurrencies}
           />
@@ -145,7 +148,7 @@ export default function Home() {
               type="button"
               className="mx-auto mt-5 text-xl bg-green-700 hover:bg-green-500 text-white md:py-3 py-2 px-6 rounded-md cursor-pointer disabled:bg-gray-500 disabled:cursor-not-allowed"
               value={step.next}
-              disabled={(step.id === CURRENCIES && nextDisabled) || (step.id === STRATEGIES && !publicKey)}
+              disabled={(step.id === CURRENCIES && selectedCurrencies.length === 0) || (step.id === STRATEGIES && !publicKey)}
               onClick={() => {
                 setStep(steps[step.id + 1])
                 if (step.id === STRATEGIES) {
