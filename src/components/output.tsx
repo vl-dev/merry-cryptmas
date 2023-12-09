@@ -45,16 +45,16 @@ const Welcome: React.FC<props> = ({ working, result }) => {
           ) : (
             <>
               <h2
-                className="mt-5 md:text-2xl text-xl font-bold text-center">
+                className="mt-5 md:text-2xl text-lg font-bold text-center">
                 Your presents are ready!
               </h2>
               <div
-                className="md:text-2xl text-lg font-bold flex flex-col text-center text-red-700">
-                <span>DOWNLOAD THE LINKS BEFORE LEAVING THIS PAGE!!!</span>
+                className="md:text-2xl text-base font-bold flex flex-col text-center text-red-700">
+                <span>SAVE THE LINKS BEFORE LEAVING THIS PAGE!!!</span>
                 <span>Otherwise you are going to lose the presents forever!</span>
               </div>
               <div
-                className="flex flex-col items-center justify-between gap-3 p-5"
+                className="flex flex-col items-center justify-between gap-1 md:gap-3 md:p-5 p-2"
               >{
                 result.vouchers.map((voucher: Voucher) => {
                   if (voucher.error !== undefined)
@@ -81,7 +81,7 @@ const Welcome: React.FC<props> = ({ working, result }) => {
                   </div>
                 )
               }
-              <div className="text-center text-white">
+              <div className="text-center text-white md:text-base text-sm">
                 Every link contains a unique present, so make sure to save them all!
               </div>
             </>)}
