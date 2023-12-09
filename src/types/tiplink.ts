@@ -37,7 +37,7 @@ export class TiplinkHandler {
     return new TiplinkHandler(payer, link, pubkey, lamports, currency)
   }
 
-  getPrepIx() {
+  getPrepIxs() {
     if (this.currency.name === 'SOL') {
       return null;
     }
@@ -47,7 +47,12 @@ export class TiplinkHandler {
       this.owner,
       this.currency.mintAddress,
     )
-    return ataIx;
+    const transferIx = SystemProgram.transfer({
+      fromPubkey: this.payer,
+      toPubkey: this.owner,
+      lamports: 1_100_000,
+    })
+    return [ataIx, transferIx];
   }
 
   async getTx(blockhash: string) {

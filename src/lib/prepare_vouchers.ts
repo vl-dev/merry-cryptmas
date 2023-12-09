@@ -71,8 +71,8 @@ export async function prepareVouchers(
     ));
 
   let prepIxs = tiplinks.map((tiplink: TiplinkHandler) =>
-    tiplink.getPrepIx()
-  ).filter((ix: any) => ix !== null)
+    tiplink.getPrepIxs()
+  ).filter((ix: any) => ix !== null).flat()
 
   if (prepIxs.length > 0) {
     const tx = new Transaction();
