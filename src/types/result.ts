@@ -5,5 +5,6 @@ export type Result = {
 
 export type Voucher = {
   link?: string,
+  amount: number,
   error?: string,
 }

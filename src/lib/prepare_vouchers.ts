@@ -33,6 +33,7 @@ async function getTiplinks(
     const pubkey = tiplink.keypair.publicKey;
     tiplinks.push({
       link: tiplinkToMyLink(tiplink.url.toString()),
+      amount: amounts[i],
       pubkey,
       ixs: [
         SystemProgram.transfer({
@@ -100,7 +101,8 @@ export async function prepareVouchers(
     try {
       const txId = await connection.sendRawTransaction(signedTx.serialize());
       console.log('Transaction sent', txId);
-      return { id: txId }
+      return { id: txId,
+      }
     } catch (e) {
       return { error: e }
     }
@@ -109,13 +111,14 @@ export async function prepareVouchers(
   const txResults = await txPromises;
 
   const vouchers: Voucher[] = tiplinks.map((tiplink: any, i: number) => {
-    debugger;
     if (txResults[Math.floor(i/3)].error) {
       return {
+        amount: tiplink.amount,
         error: txResults[Math.floor(i/3)].error.message
       }
     }
     return {
+      amount: tiplink.amount,
       link: tiplink.link
     }
   })
