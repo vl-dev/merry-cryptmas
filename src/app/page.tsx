@@ -1,186 +1,161 @@
 'use client';
 import React, { useEffect, useState } from "react";
-import Form from "@/components/form";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import { useBeforeUnload, useToggle } from "react-use";
+import Welcome from "@/components/welcome";
+import Currencies from "@/components/currencies";
+import { supportedCurrencies } from "@/types/currencies";
+import Recipients from "@/components/recipients";
+import Summary from "@/components/summary";
+import Output from "@/components/output";
+import { prepareVouchers } from "@/lib/prepare_vouchers";
+import { Result } from "@/types/result";
 
-import dynamic from 'next/dynamic';
-import { TipLink } from "@tiplink/api";
+// step enum
+const WELCOME = 0;
+const CURRENCIES = 1;
+const AMOUNTS = 2;
+const STRATEGIES = 3;
+const OUTPUT = 4;
+
+const steps = [
+  {
+    id: WELCOME,
+    next: 'Start',
+    back: null,
+  },
+  {
+    id: CURRENCIES,
+    next: 'Next',
+    back: 'Back',
+  },
+  {
+    id: AMOUNTS,
+    next: 'Next',
+    back: 'Back',
+  },
+  {
+    id: STRATEGIES,
+    back: 'Back',
+    next: 'SUBMIT'
+  },
+  {
+    id: OUTPUT,
+    next: null,
+    back: null,
+  },
+]
 
 // add this
-const WalletMultiButtonDynamic = dynamic(
-  async () => (await import('@solana/wallet-adapter-react-ui')).WalletMultiButton,
-  { ssr: false }
-);
-
-const appURL = process.env.NEXT_PUBLIC_APP_URL!
-
-function tiplinkToMyLink(tiplink: string) {
-  return tiplink.replace('https://tiplink.io/i#', `${appURL}/gift/`)
-}
-
-async function getTiplinks(
-  caller: PublicKey, total: number, count: number, distribution: string
-) {
-  if (count > 10)
-    throw new Error('Cannot generate more than 10 tickets at a time')
-
-  // array of total * LAMPORTS_PER_SOL/count
-  let amounts = []
-  for (let i = 0; i < count; i++) {
-    amounts.push(total * LAMPORTS_PER_SOL / count)
-  }
-
-  if (distribution === 'random') {
-    // scale amounts by random number between 0.5 and 1.5
-    amounts = amounts.map(c => c * (Math.random() + 0.5))
-    // normalize to add up to total * LAMPORTS_PER_SOL
-    const sum = amounts.reduce((a, b) => a + b, 0)
-    amounts = amounts.map(c => c * total * LAMPORTS_PER_SOL / sum)
-  }
-  console.log(amounts)
-
-  var tiplinks = [];
-  for (let i = 0; i < count; i++) {
-    const tiplink = await TipLink.create()
-    const pubkey = tiplink.keypair.publicKey;
-    tiplinks.push({
-      link: tiplinkToMyLink(tiplink.url.toString()),
-      pubkey,
-      ixs: [
-        SystemProgram.transfer({
-          fromPubkey: caller,
-          toPubkey: pubkey,
-          lamports: Math.floor(amounts[i]),
-        })
-      ]
-    })
-  }
-  return tiplinks
-}
+// const WalletMultiButtonDynamic = dynamic(
+//   async () => (await import('@solana/wallet-adapter-react-ui')).WalletMultiButton,
+//   { ssr: false }
+// );
 
 export default function Home() {
 
   const { connection } = useConnection();
   const { signAllTransactions, publicKey } = useWallet();
-  const [links, setLinks] = useState<string[]>([]);
+  const [step, setStep] = useState(steps[WELCOME]);
+  const [nextDisabled, setNextDisabled] = useState(false);
+  const [selectedCurrencies, setSelectedCurrencies] = useState(supportedCurrencies.map((currency) => currency.name));
+  const [totalToSpend, setTotalToSpend] = useState("0.5");
+  const [ticketsToGenerate, setTicketsToGenerate] = useState("3");
+  const [distribution, setDistribution] = useState('even');
+  const [working, setWorking] = useState(false);
+  const [result, setResult] = useState<Result>({ vouchers: [] });
 
   const [dirty, toggleDirty] = useToggle(false);
   useBeforeUnload(dirty, 'You have unsaved changes, are you sure?');
 
   useEffect(() => {
-    toggleDirty(links.length > 0);
-  }, [links]);
+    toggleDirty(result.vouchers.length > 0);
+  }, [result.vouchers]);
 
-  const handleSubmit = async (ticketsToGenerate: number,
-                              totalToSpend: number,
-                              distribution: string) => {
-    if (!signAllTransactions || !publicKey) return;
-    if (ticketsToGenerate > 10) {
-      alert('Cannot generate more than 10 tickets at a time');
+  const handleSubmit = async () => {
+    setWorking(true);
+    try {
+      let vouchers = await prepareVouchers(
+        ticketsToGenerate,
+        totalToSpend,
+        distribution,
+        connection,
+        publicKey,
+        signAllTransactions,
+      );
+      console.log(vouchers);
+      setResult({ vouchers });
+    } catch (e: any) {
+      setResult({ vouchers: [], error: e.message });
       return;
+    } finally {
+      setWorking(false);
     }
-    if (totalToSpend < 0.1) {
-      alert('Cannot spend less than 0.1 SOL');
-      return;
-    }
-    if (ticketsToGenerate < 1) {
-      alert('Cannot generate less than 1 ticket');
-      return;
-    }
-    console.log(`Total to spend: ${totalToSpend * LAMPORTS_PER_SOL}, Link count: ${ticketsToGenerate}`);
-
-    const tiplinks = await getTiplinks(
-      publicKey,
-      totalToSpend,
-      ticketsToGenerate,
-      distribution)
-
-    const tx = new Transaction();
-    tiplinks.forEach((tiplink: any) => {
-      tx.add(...tiplink.ixs);
-    })
-    tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-    tx.feePayer = publicKey;
-
-    const signedTxs = await signAllTransactions([tx]);
-    // todo here we can do some nicer handling if the tx sending fails
-    const txid = await connection.sendRawTransaction(signedTxs[0].serialize());
-    console.log(`Transaction sent: ${txid}`);
-
-    const links: string[] = tiplinks.map((tiplink: any) => tiplink.link)
-    setLinks(links);
-
-    await fetch(
-      "/api/log",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          pubkey: publicKey.toBase58(),
-          txid,
-          total: totalToSpend,
-          gifts: ticketsToGenerate,
-          strategy: distribution,
-        }),
-      }
-    )
   };
 
   return (
-    <main className="flex h-screen">
-      <div
-        className="flex flex-col items-center gap-12 m-auto h-full md:max-h-[60vh] max-h-[80vh]"
-      >
-        <h1
-          className="md:text-6xl text-3xl font-bold text-center"
-        >🎄 MERRY CRYPTMAS! 🎅</h1>
-        {links.length == 0 ? (
-          <>
-            <h2
-              className="md:text-2xl text-lg font-bold text-center"
-            >Gifts are boring, gib SOL instead!
-              <div className="mt-2 text-sm md:text-base font-medium text-white">
-                Create unique links for your friends to get SOL!
-              </div>
-            </h2>
-            <WalletMultiButtonDynamic
-              style={{ backgroundColor: 'rgb(21, 128, 61)' }}
-            />
-            <Form handleSubmit={handleSubmit} disabled={!publicKey}/>
-          </>
-        ) : (
-          <div className="-mt-10 flex flex-col items-center justify-between gap-4">
-            <h2
-              className="mt-5 md:text-2xl text-xl font-bold text-center">
-              Your presents are ready!
-            </h2>
-            <div
-              className="md:text-2xl text-lg font-bold flex flex-col text-center text-red-700">
-              <span>MAKE SURE THAT YOU SAVE THE LINKS BEFORE LEAVING THIS PAGE!!!</span>
-              <span>Otherwise you are going to lose the presents forever!</span>
-            </div>
-            <div
-              className="flex flex-col items-center justify-between gap-3 p-5"
-            >{
-              links.map((link: string) => (
-                <a
-                  href={link}
-                  key={link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-center md:text-lg text-sm text-blue-500"
-                >{link}</a>
-              ))
-            }</div>
-            <div className="text-center text-white">
-              Every link contains a unique present, so make sure to save them all!
-            </div>
-          </div>
-        )
-        }
+    <>
+      <div className="h-3/4">
+        {step.id === WELCOME && (
+          <Welcome/>
+        )}
+        {step.id === CURRENCIES && (
+          <Currencies
+            setNextDisabled={setNextDisabled}
+            selectedCurrencies={selectedCurrencies}
+            setSelectedCurrencies={setSelectedCurrencies}
+          />
+        )}
+        {step.id === AMOUNTS && (
+          <Recipients
+            totalToSpend={totalToSpend}
+            setTotalToSpend={setTotalToSpend}
+            ticketsToGenerate={ticketsToGenerate}
+            setTicketsToGenerate={setTicketsToGenerate}
+          />
+        )}
+        {step.id === STRATEGIES && (
+          <Summary
+            totalToSpend={totalToSpend}
+            ticketsToGenerate={ticketsToGenerate}
+            distribution={distribution}
+            setDistribution={setDistribution}
+          />
+        )}
+        {step.id === OUTPUT && (
+          <Output
+            working={working}
+            result={result}
+          />
+        )}
       </div>
-    </main>
+      {step.id !== OUTPUT && (
+        <div className="flex justify-between w-full items-center">
+          {step.back && (
+            <input
+              type="button"
+              className="mx-auto mt-5 text-xl border-2 border-green-700 hover:bg-green-500 text-white md:py-3 py-2 px-6 rounded-md cursor-pointer"
+              value={step.back}
+              onClick={() => setStep(steps[step.id - 1])}
+            />
+          )}
+          {step.next && (
+            <input
+              type="button"
+              className="mx-auto mt-5 text-xl bg-green-700 hover:bg-green-500 text-white md:py-3 py-2 px-6 rounded-md cursor-pointer disabled:bg-gray-500 disabled:cursor-not-allowed"
+              value={step.next}
+              disabled={(step.id === CURRENCIES && nextDisabled) || (step.id === STRATEGIES && !publicKey)}
+              onClick={() => {
+                setStep(steps[step.id + 1])
+                if (step.id === STRATEGIES) {
+                  handleSubmit()
+                }
+              }
+              }
+            />
+          )}
+        </div>
+      )}
+    </>
   )
 }
