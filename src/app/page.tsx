@@ -58,7 +58,7 @@ export default function Home() {
   const { signAllTransactions, publicKey } = useWallet();
   const [step, setStep] = useState(steps[WELCOME]);
   const [nextDisabled, setNextDisabled] = useState(false);
-  const [selectedCurrencies, setSelectedCurrencies] = useState(supportedCurrencies.map((currency) => currency.name));
+  const [selectedCurrencies, setSelectedCurrencies] = useState(supportedCurrencies);
   const [totalToSpend, setTotalToSpend] = useState("0.5");
   const [ticketsToGenerate, setTicketsToGenerate] = useState("3");
   const [distribution, setDistribution] = useState('even');
@@ -79,6 +79,7 @@ export default function Home() {
         ticketsToGenerate,
         totalToSpend,
         distribution,
+        selectedCurrencies,
         connection,
         publicKey,
         signAllTransactions,
