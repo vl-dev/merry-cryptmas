@@ -27,17 +27,20 @@ const Welcome: React.FC<props> = ({ working, result }) => {
       {working ? (
         <div className="-mt-10 flex flex-col items-center justify-between gap-4">
           <h2
-            className="mt-5 md:text-2xl text-xl font-bold text-center">
-            Elves are preparing your presents...
-            Help them by signing a few transactions!
+            className="mt-10 md:text-2xl text-xl font-bold text-center flex flex-col gap-3">
+            <div>The Elves are preparing your presents...</div>
+            <div>Help them by<span
+              className="text-green-500"
+            > signing a transaction!</span></div>
           </h2>
         </div>
       ) : (
         <div className="-mt-10 flex flex-col items-center justify-between gap-4">
-          {result.error ? (
+          {result.error || resultAmounts.success === 0? (
             <h2
-              className="mt-5 md:text-2xl text-xl font-bold text-center">
-              Error: {result.error}
+              className="mt-5 md:text-2xl text-xl font-bold text-center text-red-700">
+              <div>Error: {result.error || "Voucher creation failed on Solana"}</div>
+              <div className='mt-5'>No vouchers were created, all SOL has been returned to your wallet</div>
             </h2>
           ) : (
             <>
