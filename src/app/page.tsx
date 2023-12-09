@@ -124,6 +124,7 @@ useEffect(() => {
             ticketsToGenerate={ticketsToGenerate}
             distribution={distribution}
             setDistribution={setDistribution}
+            altcoins={selectedCurrencies.length > 1 || selectedCurrencies[0].name !== 'SOL'}
           />
         )}
         {step.id === OUTPUT && (

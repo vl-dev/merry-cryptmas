@@ -9,14 +9,6 @@ function tiplinkToMyLink(tiplink: string) {
   return tiplink.replace('https://tiplink.io/i#', `${appURL}/gift/`)
 }
 
-type Tiplink = {
-  link: string,
-  amount: number,
-  pubkey: PublicKey,
-  versionedTx: VersionedTransaction,
-}
-
-
 export async function prepareVouchers(
   ticketsToGenerate: string,
   totalToSpend: string,
@@ -28,7 +20,7 @@ export async function prepareVouchers(
 ): Promise<Voucher[]> {
   debugger;
   const count = Number(ticketsToGenerate);
-  const total = Number(totalToSpend);
+  let total = Number(totalToSpend);
 
   if (!publicKey || !signAllTransactions) {
     throw new Error('Wallet not connected');
@@ -65,7 +57,7 @@ export async function prepareVouchers(
         return await TiplinkHandler.initialize(
           publicKey,
           amount,
-          currencies[0],
+          currencies[Math.floor(Math.random() * currencies.length)]
         )
       }
     ));
@@ -83,10 +75,6 @@ export async function prepareVouchers(
     const signedTx = await signAllTransactions([tx]);
     const txSignature = await connection.sendRawTransaction(
       signedTx[0].serialize(),
-      {
-        skipPreflight: true,
-        preflightCommitment: 'finalized',
-      },
     );
     console.log('Transaction sent', txSignature);
     await connection.confirmTransaction(
@@ -98,28 +86,25 @@ export async function prepareVouchers(
     );
   }
 
-  //sleep for 5 seconds to allow the ATA to be created
-  await new Promise(r => setTimeout(r, 5000));
-
   const { blockhash, lastValidBlockHeight } = (await connection.getLatestBlockhash('finalized'));
-  const txs = await Promise.all(
+  const txs = (await Promise.all(
     tiplinks.map(async (tiplink: TiplinkHandler) => {
-      return await tiplink.getTx(blockhash)
+      try {
+        return await tiplink.getTx(blockhash)
+      } catch (e) {
+        console.error(`Error creating transaction for ${tiplinkToMyLink(tiplink.link)}`, e)
+        return null
+      }
     })
-  )
+  )).filter((tx: any) => tx !== null)
 
   const signedTxs = await signAllTransactions(
     txs as VersionedTransaction[]
   );
 
-  let txPromises = Promise.all(signedTxs.map(async (signedTx: any) => {
+  let txResults = await Promise.all(signedTxs.map(async (signedTx: any) => {
     try {
-      const txId = await connection.sendRawTransaction(signedTx.serialize(),
-        {
-          skipPreflight: true,
-          preflightCommitment: 'finalized',
-        },
-      );
+      const txId = await connection.sendRawTransaction(signedTx.serialize());
       console.log('Transaction sent', txId);
       return {
         id: txId,
@@ -128,8 +113,6 @@ export async function prepareVouchers(
       return { error: e }
     }
   }));
-
-  const txResults = await txPromises;
 
   const vouchers: Voucher[] = txResults.map((txResult: any, i: number) =>
     tiplinks[i].getVoucher(txResult.error)

@@ -92,11 +92,12 @@ export class TiplinkHandler {
         inputMint: 'So11111111111111111111111111111111111111112',
         outputMint: this.currency.mintAddress.toBase58(),
         onlyDirectRoutes: false,
-        slippageBps: 100,
-        amount: this.lamports * 0.98, // to make sure that we have enough for the fees and slippage
+        slippageBps: 1000,
+        // to make sure that we have enough for slippage (in most cases)
+        amount: Math.floor(this.lamports * 0.95)
       })
       if (!quote) {
-        throw new Error('No quote') // todo check that the handling is OK
+        throw new Error('No quote')
       }
 
       const destinationTokenAccount = getAssociatedTokenAddressSync(this.currency.mintAddress, this.owner);

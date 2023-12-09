@@ -57,7 +57,7 @@ const Currencies: React.FC<props> = (props) => {
       <div className="text-gray-500 text-center w-full flex flex-col gap-2 justify-center items-center rounded-xl">
         <div>Other currencies than SOL add a small fee per recipient (~0.0031 SOL),</div>
         <div>to create a token account and make the tokens claimable.</div>
-        <div>This SOL will be claimable by the recipient as well.</div>
+        <div>This SOL is not included in the mint price limit and is claimable by the recipient.</div>
       </div>
     </>
   )

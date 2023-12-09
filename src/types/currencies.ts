@@ -22,11 +22,11 @@ export const supportedCurrencies: Currency[] = [
     mintAddress: new PublicKey('HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3'),
     icon: '/pyth.svg',
   },
-  {
-    name: 'JTO',
-    mintAddress: new PublicKey('jtojtomepa8beP8AuQc6eXt5FriJwfFMwQx2v2f9mCL'),
-    icon: '/jito.png',
-  },
+  // {
+  //   name: 'JTO',
+  //   mintAddress: new PublicKey('jtojtomepa8beP8AuQc6eXt5FriJwfFMwQx2v2f9mCL'),
+  //   icon: '/jito.png',
+  // },
   {
     name: 'ACS',
     mintAddress: new PublicKey('5MAYDfq5yxtudAhtfyuMBuHZjgAbaS9tbEyEQYAhDS5y'),

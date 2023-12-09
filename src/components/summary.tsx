@@ -8,9 +8,10 @@ type props = {
   ticketsToGenerate: string,
   distribution: string,
   setDistribution: (value: string) => void,
+  altcoins: boolean,
 }
 
-const Currencies: React.FC<props> = (props) => {
+const Summary: React.FC<props> = (props) => {
   return (
     <>
       <h2
@@ -48,6 +49,12 @@ const Currencies: React.FC<props> = (props) => {
             props.setDistribution(props.distribution === 'even' ? 'random' : 'even');
           }}
         />
+        {props.altcoins && (
+        <div className="text-gray-500 text-center w-full flex flex-col gap-2 justify-center items-center rounded-xl">
+          <div>The final price might be slightly higher accounting for slippage </div>
+          <div>when swapping SOL to altcoins, and token account creation.</div>
+        </div>
+        )}
         <WalletButton/>
       </div>
       <div className="flex flex-col gap-2 justify-center items-center rounded-xl">
@@ -57,4 +64,4 @@ const Currencies: React.FC<props> = (props) => {
     ;
 };
 
-export default Currencies;
+export default Summary;
