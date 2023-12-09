@@ -54,9 +54,6 @@ const Currencies: React.FC<props> = (props) => {
           ))
         }
       </div>
-      <div className="flex flex-col gap-2 justify-center items-center rounded-xl">
-        more incoming soon...
-      </div>
     </>
   )
     ;

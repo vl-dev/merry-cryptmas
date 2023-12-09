@@ -42,6 +42,7 @@ export async function prepareVouchers(
   if (count < 1) {
     throw new Error('Cannot generate less than 1 ticket');
   }
+
   console.log(`Total to spend: ${total * LAMPORTS_PER_SOL}, Link count: ${count}`);
 
   // get default amounts
@@ -86,7 +87,7 @@ export async function prepareVouchers(
         skipPreflight: true,
         preflightCommitment: 'finalized',
       },
-      );
+    );
     console.log('Transaction sent', txSignature);
     await connection.confirmTransaction(
       {
@@ -96,6 +97,9 @@ export async function prepareVouchers(
       },
     );
   }
+
+  //sleep for 5 seconds to allow the ATA to be created
+  await new Promise(r => setTimeout(r, 5000));
 
   const { blockhash, lastValidBlockHeight } = (await connection.getLatestBlockhash('finalized'));
   const txs = await Promise.all(
@@ -107,10 +111,15 @@ export async function prepareVouchers(
   const signedTxs = await signAllTransactions(
     txs as VersionedTransaction[]
   );
-  
+
   let txPromises = Promise.all(signedTxs.map(async (signedTx: any) => {
     try {
-      const txId = await connection.sendRawTransaction(signedTx.serialize());
+      const txId = await connection.sendRawTransaction(signedTx.serialize(),
+        {
+          skipPreflight: true,
+          preflightCommitment: 'finalized',
+        },
+      );
       console.log('Transaction sent', txId);
       return {
         id: txId,
