@@ -39,6 +39,8 @@ const Currencies: React.FC<props> = (props) => {
               }}>
               <div className="flex flex-col gap-2 justify-center items-center rounded-xl py-4 px-8 bg-gray-900">
                 <Image
+                  width={40}
+                  height={40}
                   src={currency.icon}
                   alt="Solana"
                   className="w-10 h-10"
