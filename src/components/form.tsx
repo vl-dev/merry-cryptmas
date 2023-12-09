@@ -1,50 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
+import { NumericInput } from "@/components/numeric_input";
 
 type props = {
   handleSubmit: (ticketsToGenerate: number,
                  totalToSpend: number,
                  distribution: string) => Promise<void>;
   disabled: boolean;
-}
-
-const NumericInput: React.FC<{
-  value: string,
-  setValue: (value: string) => void,
-  min: number,
-  max: number,
-  step: number
-}> = ({
-        value,
-        setValue,
-        min,
-        max,
-        step
-      }) => {
-  return (<div
-    className="flex"
-  >
-    <input
-      className="bg-red-500 px-2 bg-opacity-30"
-      type="button" value='-'
-      disabled={Number(value) <= min}
-      onClick={() => setValue((Math.round((Number(value) - step) * (1.0/step)) / (1.0/step)).toString())}
-    />
-    <input
-      type="text"
-      className="w-20 text-center bg-stone-700 text-white"
-      value={value}
-      onChange={e => setValue(e.target.value)}
-      onBlur={e => setValue(Number(e.target.value) ? Math.min(Math.max(Number(e.target.value), min), max).toString() : min.toString())}
-    />
-    <input
-      className="bg-green-700 bg-opacity-50 px-2"
-      type="button" value='+'
-      disabled={Number(value) >= max}
-      onClick={() => setValue((Math.round((Number(value) + step) * (1.0/step)) / (1.0/step)).toString())}
-    />
-  </div>)
 }
 
 const Form: React.FC<props> = (props: props) => {
