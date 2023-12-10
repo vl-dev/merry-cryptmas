@@ -1,13 +1,7 @@
-import { Connection, LAMPORTS_PER_SOL, PublicKey, Transaction, VersionedTransaction } from "@solana/web3.js";
+import { Connection, LAMPORTS_PER_SOL, PublicKey, VersionedTransaction } from "@solana/web3.js";
 import { Voucher } from "@/types/result";
 import { Currency } from "@/types/currencies";
 import { TiplinkHandler } from "@/types/tiplink";
-
-const appURL = process.env.NEXT_PUBLIC_APP_URL!
-
-function tiplinkToMyLink(tiplink: string) {
-  return tiplink.replace('https://tiplink.io/i#', `${appURL}/gift/`)
-}
 
 export async function prepareVouchers(
   ticketsToGenerate: string,
@@ -18,7 +12,6 @@ export async function prepareVouchers(
   publicKey: PublicKey | null,
   signAllTransactions: any,
 ): Promise<Voucher[]> {
-  debugger;
   const count = Number(ticketsToGenerate);
   let total = Number(totalToSpend);
 
@@ -62,37 +55,13 @@ export async function prepareVouchers(
       }
     ));
 
-  let prepIxs = tiplinks.map((tiplink: TiplinkHandler) =>
-    tiplink.getPrepIxs()
-  ).filter((ix: any) => ix !== null).flat()
-
-  if (prepIxs.length > 0) {
-    const tx = new Transaction();
-    const { blockhash, lastValidBlockHeight } = (await connection.getLatestBlockhash('finalized'));
-    tx.recentBlockhash = blockhash;
-    tx.feePayer = publicKey;
-    tx.add(...prepIxs as any);
-    const signedTx = await signAllTransactions([tx]);
-    const txSignature = await connection.sendRawTransaction(
-      signedTx[0].serialize(),
-    );
-    console.log('Transaction sent', txSignature);
-    await connection.confirmTransaction(
-      {
-        signature: txSignature,
-        lastValidBlockHeight,
-        blockhash,
-      },
-    );
-  }
-
-  const { blockhash, lastValidBlockHeight } = (await connection.getLatestBlockhash('finalized'));
+  const {blockhash, lastValidBlockHeight} = await connection.getLatestBlockhash();
   const txs = (await Promise.all(
     tiplinks.map(async (tiplink: TiplinkHandler) => {
       try {
-        return await tiplink.getTx(blockhash)
+        return await tiplink.getTx(connection, blockhash)
       } catch (e) {
-        console.error(`Error creating transaction for ${tiplinkToMyLink(tiplink.link)}`, e)
+        console.error(`Error creating transaction for ${tiplink.link}`, e)
         return null
       }
     })
@@ -104,8 +73,25 @@ export async function prepareVouchers(
 
   let txResults = await Promise.all(signedTxs.map(async (signedTx: any) => {
     try {
-      const txId = await connection.sendRawTransaction(signedTx.serialize());
+      const txId = await connection.sendRawTransaction(signedTx.serialize(),
+        {
+          skipPreflight: true,
+          preflightCommitment: 'confirmed',
+          maxRetries: 3,
+        }
+        );
       console.log('Transaction sent', txId);
+      const result = await connection.confirmTransaction(
+        {
+          signature: txId,
+          lastValidBlockHeight,
+          blockhash,
+        },
+        'confirmed',
+      );
+      if (result.value.err) {
+        throw result.value.err
+      }
       return {
         id: txId,
       }

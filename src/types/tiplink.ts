@@ -1,4 +1,10 @@
-import { PublicKey, SystemProgram, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
+import {
+  AddressLookupTableAccount, Connection,
+  PublicKey,
+  SystemProgram,
+  TransactionMessage,
+  VersionedTransaction
+} from "@solana/web3.js";
 import { Currency } from "@/types/currencies";
 import { TipLink } from "@tiplink/api";
 import { createAssociatedTokenAccountInstruction, getAssociatedTokenAddressSync } from "@solana/spl-token";
@@ -37,7 +43,7 @@ export class TiplinkHandler {
     return new TiplinkHandler(payer, link, pubkey, lamports, currency)
   }
 
-  getPrepIxs() {
+  private getPrepIxs() {
     if (this.currency.name === 'SOL') {
       return null;
     }
@@ -55,7 +61,7 @@ export class TiplinkHandler {
     return [ataIx, transferIx];
   }
 
-  async getTx(blockhash: string) {
+  async getTx(connection:Connection, recentBlockhash: string): Promise<VersionedTransaction> {
     if (this.currency.name === 'SOL') {
       const ix = SystemProgram.transfer({
         fromPubkey: this.payer,
@@ -64,12 +70,38 @@ export class TiplinkHandler {
       })
       const messageV0 = new TransactionMessage({
         payerKey: this.payer,
-        recentBlockhash: blockhash,
+        recentBlockhash,
         instructions: [ix],
       }).compileToV0Message();
       return new VersionedTransaction(messageV0);
     }
-    return await this.getSwapTx()
+    const swapTx = await this.getSwapTx()
+    const prepIxs = this.getPrepIxs()
+    if (!prepIxs) {
+      return swapTx;
+    }
+
+    // get address lookup table accounts
+    const addressLookupTableAccounts = await Promise.all(
+      swapTx.message.addressTableLookups.map(async (lookup) => {
+        let data = (await connection.getAccountInfo(lookup.accountKey))?.data
+        if (!data) {
+          throw new Error(`Account ${lookup.accountKey.toBase58()} does not exist`)
+        }
+        return new AddressLookupTableAccount({
+          key: lookup.accountKey,
+          state: AddressLookupTableAccount.deserialize(data),
+        })
+      }))
+
+    // decompile transaction message and add transfer instruction
+    const message = TransactionMessage.decompile(swapTx.message,{addressLookupTableAccounts: addressLookupTableAccounts})
+    message.instructions = [...prepIxs, ...message.instructions]
+
+    // compile the message and update the transaction
+    swapTx.message = message.compileToV0Message(addressLookupTableAccounts)
+
+    return swapTx;
   }
 
   getVoucher(error?: string): Voucher {
@@ -119,7 +151,6 @@ export class TiplinkHandler {
       return vtx;
     } catch (e) {
       console.log(e)
-      debugger;
       throw e;
     }
   }

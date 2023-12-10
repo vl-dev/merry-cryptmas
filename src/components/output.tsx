@@ -3,7 +3,12 @@
 import React, { useEffect } from 'react';
 import { useBeforeUnload, useToggle } from "react-use";
 import { Result, Voucher } from "@/types/result";
-import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+
+const appURL = process.env.NEXT_PUBLIC_APP_URL!
+
+function tiplinkToMyLink(tiplink: string) {
+  return tiplink.replace('https://tiplink.io/i#', `${appURL}/gift/`)
+}
 
 type props = {
   working: boolean,
@@ -58,18 +63,19 @@ const Welcome: React.FC<props> = ({ working, result }) => {
                 className="flex flex-col items-center justify-between gap-1 md:gap-3 md:p-5 p-2"
               >{
                 result.vouchers.map((voucher: Voucher) => {
-                  if (voucher.error !== undefined)
+                  if (voucher.error !== undefined || voucher.link === undefined)
                     return null;
+                  const link = tiplinkToMyLink(voucher.link);
                   return (<div
-                    key={voucher.link}
+                    key={link}
                   >
                     <a
-                      href={voucher.link}
-                      key={voucher.link}
+                      href={link}
+                      key={link + 'a'}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-center md:text-base text-sm text-blue-500"
-                    >{voucher.link}</a>
+                    >{link}</a>
                   </div>)
                 })
               }</div>
@@ -78,7 +84,7 @@ const Welcome: React.FC<props> = ({ working, result }) => {
                   <div
                     className="md:text-lg text-md flex flex-col text-center text-yellow-500">
                     <span>There were some errors while creating the vouchers.</span>
-                    <span>You have paid only for the created vouchers, {resultAmounts.error / LAMPORTS_PER_SOL} SOL have been returned to your wallet</span>
+                    <span>No worries, you have paid only for the created vouchers</span>
                   </div>
                 )
               }
