@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Currency, supportedCurrencies } from "@/types/currencies";
 import Image from "next/image";
 
@@ -43,13 +43,15 @@ const Currencies: React.FC<props> = (props) => {
                 />
                 <div className="text-lg">{currency.name}</div>
               </div>
-              {!props.selectedCurrencies.includes(currency) && (
-                <div className="absolute top-0 right-0 w-full h-full rounded-xl bg-opacity-60 inset-y-0 bg-gray-700">
-                  <div className="flex justify-center items-center w-full h-full">
-                    <div className="text-5xl text-red-500">╳</div>
-                  </div>
+              <div className="absolute top-0 right-0 rounded-xl bg-opacity-50 w-8 h-8 bg-gray-800">
+                <div className="flex w-full h-full justify-center items-center">
+                  {!props.selectedCurrencies.includes(currency) ? (
+                    <div className="text-2xl text-red-500">✗</div>
+                  ): (
+                    <div className="text-2xl text-green-500">✓</div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           ))
         }
