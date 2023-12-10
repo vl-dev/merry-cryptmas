@@ -16,7 +16,7 @@ const rpcURL = process.env.NEXT_PUBLIC_RPC_URL!
 export const Wallet: FC<WalletProps> = ({ children }) => {
   return (
     <ConnectionProvider endpoint={rpcURL}>
-      <WalletProvider wallets={[]} autoConnect>
+      <WalletProvider wallets={[]}>
         <WalletModalProvider>
           {children}
         </WalletModalProvider>

@@ -1,62 +1,19 @@
-import { Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
-import { TipLink } from "@tiplink/api";
+import { Connection, LAMPORTS_PER_SOL, PublicKey, VersionedTransaction } from "@solana/web3.js";
 import { Voucher } from "@/types/result";
-
-const appURL = process.env.NEXT_PUBLIC_APP_URL!
-
-function tiplinkToMyLink(tiplink: string) {
-  return tiplink.replace('https://tiplink.io/i#', `${appURL}/gift/`)
-}
-
-async function getTiplinks(
-  caller: PublicKey, total: number, count: number, distribution: string
-) {
-
-  // array of total * LAMPORTS_PER_SOL/count
-  let amounts = []
-  for (let i = 0; i < count; i++) {
-    amounts.push(total * LAMPORTS_PER_SOL / count)
-  }
-
-  if (distribution === 'random') {
-    // scale amounts by random number between 0.5 and 1.5
-    amounts = amounts.map(c => c * (Math.random() + 0.5))
-    // normalize to add up to total * LAMPORTS_PER_SOL
-    const sum = amounts.reduce((a, b) => a + b, 0)
-    amounts = amounts.map(c => c * total * LAMPORTS_PER_SOL / sum)
-  }
-  console.log(amounts)
-
-  var tiplinks = [];
-  for (let i = 0; i < count; i++) {
-    const tiplink = await TipLink.create()
-    const pubkey = tiplink.keypair.publicKey;
-    tiplinks.push({
-      link: tiplinkToMyLink(tiplink.url.toString()),
-      amount: amounts[i],
-      pubkey,
-      ixs: [
-        SystemProgram.transfer({
-          fromPubkey: caller,
-          toPubkey: pubkey,
-          lamports: Math.floor(amounts[i]),
-        })
-      ]
-    })
-  }
-  return tiplinks
-}
+import { Currency } from "@/types/currencies";
+import { TiplinkHandler } from "@/types/tiplink";
 
 export async function prepareVouchers(
   ticketsToGenerate: string,
   totalToSpend: string,
   distribution: string,
+  currencies: Currency[],
   connection: Connection,
   publicKey: PublicKey | null,
   signAllTransactions: any,
 ): Promise<Voucher[]> {
   const count = Number(ticketsToGenerate);
-  const total = Number(totalToSpend);
+  let total = Number(totalToSpend);
 
   if (!publicKey || !signAllTransactions) {
     throw new Error('Wallet not connected');
@@ -70,58 +27,82 @@ export async function prepareVouchers(
   if (count < 1) {
     throw new Error('Cannot generate less than 1 ticket');
   }
+
   console.log(`Total to spend: ${total * LAMPORTS_PER_SOL}, Link count: ${count}`);
 
-  const tiplinks = await getTiplinks(
-    publicKey,
-    total,
-    count,
-    distribution)
-
-  const txSets = [];
-  // spread tiplinks to groups of 3
-  for (let i = 0; i < tiplinks.length; i += 3) {
-    txSets.push(tiplinks.slice(i, i + 3));
+  // get default amounts
+  let amounts = []
+  for (let i = 0; i < count; i++) {
+    amounts.push(total * LAMPORTS_PER_SOL / count)
   }
 
-  const recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-  const txs = txSets.map((txSet) => {
-    const tx = new Transaction();
-    txSet.forEach((tiplink: any) => {
-      tx.add(...tiplink.ixs);
+  // randomize if applicable
+  if (distribution === 'random') {
+    // scale amounts by random number between 0.5 and 1.5
+    amounts = amounts.map(c => c * (Math.random() + 0.5))
+    // normalize to add up to total * LAMPORTS_PER_SOL
+    const sum = amounts.reduce((a, b) => a + b, 0)
+    amounts = amounts.map(c => c * total * LAMPORTS_PER_SOL / sum)
+  }
+
+  let tiplinks = await Promise.all(
+    amounts.map(async (amount: number) => {
+        return await TiplinkHandler.initialize(
+          publicKey,
+          amount,
+          currencies[Math.floor(Math.random() * currencies.length)]
+        )
+      }
+    ));
+
+  const {blockhash, lastValidBlockHeight} = await connection.getLatestBlockhash();
+  const txs = (await Promise.all(
+    tiplinks.map(async (tiplink: TiplinkHandler) => {
+      try {
+        return await tiplink.getTx(connection, blockhash)
+      } catch (e) {
+        console.error(`Error creating transaction for ${tiplink.link}`, e)
+        return null
+      }
     })
-    tx.recentBlockhash = recentBlockhash;
-    tx.feePayer = publicKey;
-    return tx;
-  })
+  )).filter((tx: any) => tx !== null)
 
-  const signedTxs = await signAllTransactions(txs);
+  const signedTxs = await signAllTransactions(
+    txs as VersionedTransaction[]
+  );
 
-  let txPromises = Promise.all(signedTxs.map(async (signedTx: any) => {
+  let txResults = await Promise.all(signedTxs.map(async (signedTx: any) => {
     try {
-      const txId = await connection.sendRawTransaction(signedTx.serialize());
+      const txId = await connection.sendRawTransaction(signedTx.serialize(),
+        {
+          skipPreflight: true,
+          preflightCommitment: 'confirmed',
+          maxRetries: 3,
+        }
+        );
       console.log('Transaction sent', txId);
-      return { id: txId,
+      const result = await connection.confirmTransaction(
+        {
+          signature: txId,
+          lastValidBlockHeight,
+          blockhash,
+        },
+        'confirmed',
+      );
+      if (result.value.err) {
+        throw result.value.err
+      }
+      return {
+        id: txId,
       }
     } catch (e) {
       return { error: e }
     }
   }));
 
-  const txResults = await txPromises;
-
-  const vouchers: Voucher[] = tiplinks.map((tiplink: any, i: number) => {
-    if (txResults[Math.floor(i/3)].error) {
-      return {
-        amount: tiplink.amount,
-        error: txResults[Math.floor(i/3)].error.message
-      }
-    }
-    return {
-      amount: tiplink.amount,
-      link: tiplink.link
-    }
-  })
+  const vouchers: Voucher[] = txResults.map((txResult: any, i: number) =>
+    tiplinks[i].getVoucher(txResult.error)
+  )
 
   try {
     await fetch(

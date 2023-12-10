@@ -24,9 +24,9 @@ export function WalletButton() {
   const [menuOpen, setMenuOpen] = useState(false);
   const ref = useRef<HTMLUListElement>(null);
 
-  let klass = "mx-auto mt-5 text-xl bg-green-700 hover:bg-green-500 text-white md:py-3 py-2 px-6 rounded-md cursor-pointer disabled:bg-gray-500 disabled:cursor-not-allowed"
+  let klass = "mx-auto text-xl bg-green-700 hover:bg-green-500 text-white md:py-3 py-2 px-6 rounded-md cursor-pointer disabled:bg-gray-500 disabled:cursor-not-allowed"
   if (publicKey) {
-    klass = "mx-auto mt-5 text-xl border-2 border-green-700 hover:bg-green-500 text-white md:py-3 py-2 px-6 rounded-md cursor-pointer"
+    klass = "mx-auto text-xl border-2 border-green-700 hover:bg-green-500 text-white md:py-3 py-2 px-6 rounded-md cursor-pointer"
   }
   useEffect(() => {
     const listener = (event: MouseEvent | TouchEvent) => {

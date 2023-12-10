@@ -11,9 +11,6 @@ export default function Id() {
       <div
         className="flex flex-col items-center gap-12 m-auto h-full max-h-[60vh]"
       >
-        <h1
-          className="md:text-6xl text-3xl font-bold text-center"
-        >🎄 MERRY CRYPTMAS! 🎅</h1>
         <div className="text-2xl text-white">
           Open your present by clicking on it!
         </div>
