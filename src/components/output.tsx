@@ -49,9 +49,9 @@ const Welcome: React.FC<props> = ({ working, result }) => {
               <div className='mt-5'>No vouchers were created</div>
             </h2>
           ) : (
-            <>
+            <div className="flex flex-col items-center justify-between gap-3">
               <h2
-                className="mt-5 md:text-2xl text-lg font-bold text-center">
+                className="md:mt-10 mt-2 md:text-2xl text-lg font-bold text-center">
                 Your presents are ready!
               </h2>
               <div
@@ -60,25 +60,37 @@ const Welcome: React.FC<props> = ({ working, result }) => {
                 <span>Otherwise you are going to lose the presents forever!</span>
               </div>
               <div
-                className="flex flex-col items-center justify-between gap-1 md:gap-3 md:p-5 p-2"
+                className="flex flex-col items-center justify-between  md:gap-2 md:p-5 p-2"
               >{
                 result.vouchers.map((voucher: Voucher) => {
                   if (voucher.error !== undefined || voucher.link === undefined)
                     return null;
                   const link = tiplinkToMyLink(voucher.link);
-                  return (<div
-                    key={link}
-                  >
-                    <a
-                      href={link}
-                      key={link + 'a'}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-center md:text-base text-sm text-blue-500"
-                    >{link}</a>
-                  </div>)
+                  return (
+                    <div
+                      key={link}
+                    >
+                      <a
+                        href={link}
+                        key={link + 'a'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-center md:text-base text-xs text-blue-500"
+                      >{link}</a>
+                    </div>)
                 })
               }</div>
+              <input
+                type="button"
+                className="mx-auto text-xl border-2 border-green-700 hover:bg-green-500 text-white md:py-3 py-2 px-6 rounded-md cursor-pointer"
+                value="Copy all links"
+                onClick={() => {
+                  navigator.clipboard.writeText(result.vouchers
+                    .filter((voucher: Voucher) => voucher.error === undefined && voucher.link !== undefined)
+                    .map((voucher: Voucher) => tiplinkToMyLink(voucher.link!))
+                    .join('\n'));
+                }}
+              />
               {
                 resultAmounts.error > 0 && (
                   <div
@@ -91,7 +103,7 @@ const Welcome: React.FC<props> = ({ working, result }) => {
               <div className="text-center text-white md:text-base text-sm">
                 Every link contains a unique present, so make sure to save them all!
               </div>
-            </>)}
+            </div>)}
         </div>
       )}
     </>
