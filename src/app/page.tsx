@@ -10,7 +10,8 @@ import Summary from "@/components/summary";
 import Output from "@/components/output";
 import { prepareVouchers } from "@/lib/prepare_vouchers";
 import { Result } from "@/types/result";
-import currencies from "@/components/currencies";
+import VoucherPDF from "@/components/voucher";
+import { PDFDownloadLink } from "@react-pdf/renderer";
 
 // step enum
 const WELCOME = 0;
@@ -94,9 +95,9 @@ export default function Home() {
     }
   };
 
-useEffect(() => {
-  console.log(selectedCurrencies)
-}, [selectedCurrencies])
+  useEffect(() => {
+    console.log(selectedCurrencies)
+  }, [selectedCurrencies])
 
   return (
     <>
